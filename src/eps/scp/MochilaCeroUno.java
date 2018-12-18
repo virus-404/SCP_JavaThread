@@ -11,6 +11,8 @@ public class MochilaCeroUno {
     protected int profit           = 0;
     protected boolean calculated   = false;
 
+    int max_thread = 4;
+
     public MochilaCeroUno() {}
     public MochilaCeroUno(int _maxWeight) {
         setMaxWeight(_maxWeight);
@@ -23,35 +25,62 @@ public class MochilaCeroUno {
         setMaxWeight(_maxWeight);
     }
     // calculte the solution of 0-1 knapsack problem with dynamic method:
-    public List<Item> calcSolution() {
 
+    public List<Item> calcSolution() {
         int n = itemList.size();
         setInitialStateForCalculation();
-
         if (n > 0  &&  maxWeight > 0) {
-            List< List<Integer> > c = new ArrayList< List<Integer> >();
+            List< List<Integer> > c = new ArrayList<List<Integer>>();
             List<Integer> curr = new ArrayList<Integer>();
+            ThreadWorker [] workers;
+            ThreadWorker.setItemList(itemList);
+
+            int[] start =  new int [max_thread];
+            int[] stop = new int [max_thread];
+            int begin = 0;
+            int end = maxWeight / max_thread;
+
+            for (int x = 0; x < max_thread - 1; x++){
+                start[x] = begin;
+                stop[x] = end + begin;
+                begin = end + begin + 1;
+            }
+            start[max_thread - 1] = begin;
+            stop[max_thread - 1] = maxWeight;
+
             c.add(curr);
 
             for (int j = 0; j <= maxWeight; j++)
                 curr.add(0);
 
             for (int i = 1; i <= n; i++) {
+                //System.out.println("---------- Line : " + i + " ----------");
+                workers = new ThreadWorker[max_thread];
                 List<Integer> prev = curr;
-                c.add(curr = new ArrayList<Integer>());
-                for (int j = 0; j <= maxWeight; j++) {
-                    if (j > 0) {
-                        int wH = itemList.get(i - 1).getWeight();
-                        if (wH > j)
-                            curr.add(prev.get(j));
-                        else
-                            curr.add(Math.max(prev.get(j),
-                                              itemList.get(i-1).getValue() + prev.get(j-wH)));
-                    } else {
-                        curr.add(0);
+                ThreadWorker.setPrev(prev);
+                ThreadWorker.setIdx(i);
+                for (int x = 0; x < max_thread; x++){
+                    workers[x] = new ThreadWorker(start[x],stop[x], x);
+                    workers[x].start();
+                    //System.out.println("Thread [" + x +"] working...");
+                }
+                /*
+                * TODO: synchronized is blocking somehow other blocks
+                * TODO: Command line argument
+                 */
+                for (ThreadWorker worker : workers) {
+                    try {
+                        //System.out.println("[REQ] Thread |" + worker.getID() + "| alive = " + worker.isAlive());
+                        worker.join();
+                        //System.out.println("[ACK] Thread |" + worker.getID() + "| alive = " + worker.isAlive());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } // for (j...)
-            } // for (i...)aa
+
+                }
+                curr = ThreadWorker.getCurr();
+                c.add(curr);
+            } // for (i...)
 
             profit = curr.get(maxWeight);
 
@@ -71,6 +100,14 @@ public class MochilaCeroUno {
         } // if()
         return itemList;
     }
+
+    private int getFreeThread(ThreadWorker[] workers) {
+        for (int x = 0; x < max_thread; x++){
+            if (!workers[x].isAlive()) return x;
+        }
+        return -1;
+    }
+
     // add an item to the item list
     public void add(String name, int weight, int value) {
         if (name.equals(""))
