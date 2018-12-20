@@ -11,7 +11,7 @@ public class MochilaCeroUno {
     protected int profit           = 0;
     protected boolean calculated   = false;
 
-    int max_thread = 4;
+    int max_thread = MochilaAcotadaSec.getMax_threads();
 
     public MochilaCeroUno() {}
     public MochilaCeroUno(int _maxWeight) {

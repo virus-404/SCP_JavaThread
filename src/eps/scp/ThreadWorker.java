@@ -36,7 +36,6 @@ class ThreadWorker  extends Thread {
             }
         }
 
-
         while (ID != turn){
             try {
                 TimeUnit.NANOSECONDS.sleep(1);

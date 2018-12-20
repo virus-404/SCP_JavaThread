@@ -12,6 +12,7 @@ public class MochilaAcotadaSec {
 
     private MochilaAcotada bok;
     private static final double NanosBySecond=1000000000.0;
+    protected static int max_threads;
 
     public MochilaAcotadaSec()
     {
@@ -127,14 +128,20 @@ public class MochilaAcotadaSec {
         }
     }
 
+    public static int getMax_threads() {
+        return max_threads;
+    }
+
     public static void main(@NotNull String[] args)
     {
         MochilaAcotadaSec mochila;
 
         if (args.length < 2)
             mochila = new MochilaAcotadaSec();
-        else
+        else {
+            max_threads = Integer.parseInt(args[2]);
             mochila = new MochilaAcotadaSec(Integer.parseInt(args[0]),args[1]);
+        }
     }
 
 } // class
